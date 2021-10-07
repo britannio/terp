@@ -7,7 +7,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Terp')),
+      appBar: AppBar(title: const Text('Terp'), centerTitle: true),
       body: const _HomeBody(),
       floatingActionButton: OrderButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -58,15 +58,22 @@ class _HomeBodyState extends State<_HomeBody> {
         final totalSeconds = notifier.secondsBeforeNextDrink;
         return Column(
           children: [
-            Expanded(flex: 2, child: Image.asset('assets/images/qr_code.png')),
-            Expanded(
-              child: Center(
-                child: Text(
-                  formatSeconds(totalSeconds),
-                  style: const TextStyle(fontSize: 40),
-                ),
+            const Spacer(flex: 2),
+            Transform.scale(
+              scale: 1.5,
+              child: Image.asset(
+                'assets/images/qr_code.png',
+                width: double.infinity,
               ),
             ),
+            const Spacer(),
+            Center(
+              child: Text(
+                formatSeconds(totalSeconds),
+                style: const TextStyle(fontSize: 80),
+              ),
+            ),
+            const Spacer(flex: 5),
           ],
         );
       },

@@ -1,1 +1,1 @@
-const kCooldown = Duration(seconds: 30);
+const kCooldown = Duration(minutes: 30);

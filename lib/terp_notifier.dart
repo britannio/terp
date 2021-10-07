@@ -22,9 +22,15 @@ class TerpNotifier extends ChangeNotifier {
 
   Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
+
     tz.initializeTimeZones();
     final location = tz.getLocation('Europe/London');
     tz.setLocalLocation(location);
+    await _notifications.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('notification_icon'),
+      ),
+    );
     _restoreCountdown();
   }
 
@@ -33,11 +39,10 @@ class TerpNotifier extends ChangeNotifier {
     final lastOrder = DateTime.fromMillisecondsSinceEpoch(
       _preferences.getInt('last_order') ?? now.millisecondsSinceEpoch,
     );
-    _secondsBeforeNextDrink = kCooldown.inSeconds -
-        math.min(
-          now.difference(lastOrder).inSeconds,
-          kCooldown.inSeconds,
-        );
+    _secondsBeforeNextDrink = math.max(
+      kCooldown.inSeconds - now.difference(lastOrder).inSeconds,
+      0,
+    );
     _resetTimer();
   }
 
@@ -67,7 +72,7 @@ class TerpNotifier extends ChangeNotifier {
       'Enjoy your next drink!',
       tz.TZDateTime.now(tz.local).add(kCooldown),
       const NotificationDetails(
-        android: AndroidNotificationDetails('drink-cooldown', ''),
+        android: AndroidNotificationDetails('drink-cooldown', 'Drink Cooldown'),
       ),
       // Absolute time is the correct interpretation for countdown timers
       uiLocalNotificationDateInterpretation:
@@ -77,6 +82,7 @@ class TerpNotifier extends ChangeNotifier {
     // Reset the countdown
     // Schedule a push notification
     _secondsBeforeNextDrink = kCooldown.inSeconds;
+    notifyListeners();
     _resetTimer();
   }
 }
