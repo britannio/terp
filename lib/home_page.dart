@@ -46,7 +46,8 @@ class _HomeBodyState extends State<_HomeBody> {
 
   String formatSeconds(int totalSeconds) {
     final minutes = totalSeconds ~/ Duration.secondsPerMinute;
-    final seconds = totalSeconds % Duration.secondsPerMinute;
+    final seconds =
+        (totalSeconds % Duration.secondsPerMinute).toString().padLeft(2, '0');
     return '$minutes:$seconds';
   }
 
