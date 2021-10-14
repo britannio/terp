@@ -9,16 +9,35 @@ import 'package:timezone/timezone.dart' as tz;
 import 'dart:math' as math;
 
 class TerpNotifier extends ChangeNotifier {
-  TerpNotifier._();
+  TerpNotifier._() {
+    // Update every second
+    Stream.periodic(const Duration(seconds: 1))
+        .listen((_) => notifyListeners());
+  }
+
   static final instance = TerpNotifier._();
 
   late final SharedPreferences _preferences;
   final _notifications = FlutterLocalNotificationsPlugin();
 
-  int get secondsBeforeNextDrink => _secondsBeforeNextDrink;
-  int _secondsBeforeNextDrink = 0;
+  int get secondsBeforeNextDrink {
+    final now = DateTime.now();
+    final lastOrder = DateTime.fromMillisecondsSinceEpoch(
+      _preferences.getInt('last_order') ?? now.millisecondsSinceEpoch,
+    );
+    return math.max(
+      kCooldown.inSeconds - now.difference(lastOrder).inSeconds,
+      0,
+    );
+  }
 
-  Timer? _timer;
+  String get currentCode => _preferences.getString('code') ?? '';
+  set currentCode(String code) {
+    () async {
+      await _preferences.setString('code', code);
+      notifyListeners();
+    }();
+  }
 
   Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
@@ -31,32 +50,6 @@ class TerpNotifier extends ChangeNotifier {
         android: AndroidInitializationSettings('notification_icon'),
       ),
     );
-    _restoreCountdown();
-  }
-
-  Future<void> _restoreCountdown() async {
-    final now = DateTime.now();
-    final lastOrder = DateTime.fromMillisecondsSinceEpoch(
-      _preferences.getInt('last_order') ?? now.millisecondsSinceEpoch,
-    );
-    _secondsBeforeNextDrink = math.max(
-      kCooldown.inSeconds - now.difference(lastOrder).inSeconds,
-      0,
-    );
-    _resetTimer();
-  }
-
-  void _resetTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsBeforeNextDrink <= 0) {
-        timer.cancel();
-        return;
-      }
-
-      _secondsBeforeNextDrink--;
-      notifyListeners();
-    });
   }
 
   Future<void> order() async {
@@ -79,10 +72,5 @@ class TerpNotifier extends ChangeNotifier {
           UILocalNotificationDateInterpretation.absoluteTime,
       androidAllowWhileIdle: true,
     );
-    // Reset the countdown
-    // Schedule a push notification
-    _secondsBeforeNextDrink = kCooldown.inSeconds;
-    notifyListeners();
-    _resetTimer();
   }
 }
